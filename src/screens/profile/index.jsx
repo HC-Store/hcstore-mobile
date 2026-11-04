@@ -258,7 +258,10 @@ const Profile = () => {
                         try {
                             await deleteEndereco(id)
                         } catch (error) {
-                            Alert.alert("Erro ao excluir endereço", error.message)
+                            Alert.alert(
+                                "Não foi possível excluir",
+                                "Este endereço está vinculado a um pedido e não pode ser removido."
+                            )
                             return
                         }
 
