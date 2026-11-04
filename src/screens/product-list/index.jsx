@@ -13,67 +13,66 @@ import {
     BuyButtonText
 } from "./style"
 
-import { useNavigation } from "@react-navigation/native"
+import { useEffect, useState } from "react"
+import { ActivityIndicator, Image } from "react-native"
+import { useNavigation, useRoute } from "@react-navigation/native"
+import { getProdutos } from "../../services/api"
 
 import Header from "../../components/header"
 import BottomMenu from "../../components/bottom-menu"
 
 
-const products = [
-    {
-        id: "1",
-        name: "Nome do Produto",
-        price: "R$ 199,90"
-    },
-    {
-        id: "2",
-        name: "Nome do Produto",
-        price: "R$ 199,90"
-    },
-    {
-        id: "3",
-        name: "Nome do Produto",
-        price: "R$ 189,90"
-    },
-    {
-        id: "4",
-        name: "Nome do Produto",
-        price: "R$ 189,90"
-    },
-    {
-        id: "5",
-        name: "Nome do Produto",
-        price: "R$ 159,90"
-    },
-    {
-        id: "6",
-        name: "Nome do Produto",
-        price: "R$ 159,90"
-    }
-]
 
 
 const ProductList = () => {
-      const navigation = useNavigation()
+    const navigation = useNavigation()
+    const route = useRoute()
+    const categoriaId = route.params?.categoriaId
+    const [products, setProducts] = useState([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        getProdutos()
+            .then((data) =>
+                setProducts(
+                    categoriaId
+                        ? data.filter((p) => p.categoriaId === categoriaId)
+                        : data
+                )
+            )
+            .catch(() => setProducts([]))
+            .finally(() => setLoading(false))
+    }, [categoriaId])
+
+    const formatPrice = (value) =>
+        Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
     const renderProduct = ({ item }) => {
 
         return (
             <ProductCard>
 
-                <ProductImage>
-                    IMAGEM
-                </ProductImage>
+                {item.image ? (
+                    <Image
+                        source={{ uri: item.image }}
+                        style={{ width: "100%", height: 145 }}
+                        resizeMode="cover"
+                    />
+                ) : (
+                    <ProductImage>
+                        IMAGEM
+                    </ProductImage>
+                )}
 
                 <ProductName>
-                    {item.name}
+                    {item.nome}
                 </ProductName>
 
                 <ProductPrice>
-                    {item.price}
+                    {formatPrice(item.preco)}
                 </ProductPrice>
 
-                <BuyButton onPress={() => navigation.navigate("ProductDetails")}>
+                <BuyButton onPress={() => navigation.navigate("ProductDetails", { product: item })}>
                     <BuyButtonText>
                         COMPRAR
                     </BuyButtonText>
@@ -108,7 +107,8 @@ const ProductList = () => {
             <ProductsList
                 data={products}
                 renderItem={renderProduct}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => String(item.id)}
+                ListEmptyComponent={loading ? <ActivityIndicator color="#000" /> : null}
                 numColumns={2}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{
