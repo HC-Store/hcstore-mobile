@@ -1,5 +1,5 @@
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import {
     View,
     Text,
@@ -13,6 +13,14 @@ import {
 } from "react-native"
 
 import { useNavigation } from "@react-navigation/native"
+import {
+    createEndereco,
+    deleteEndereco,
+    getCurrentUser,
+    getMyEnderecos,
+    getMyPedidos,
+    logout
+} from "../../services/api"
 
 import Header from "../../components/header"
 import BottomMenu from "../../components/bottom-menu"
@@ -74,21 +82,24 @@ import {
 
 const GREEN = "#00FF63"
 
-// Dados reais serão carregados da API futuramente.
-const initialUser = {
-    name: "",
-    email: "",
-    memberSince: "",
-    points: null,
-    level: ""
+const buildUser = () => {
+    const current = getCurrentUser()
+
+    return {
+        name: current?.nome ?? "",
+        email: current?.email ?? "",
+        memberSince: "",
+        points: null,
+        level: ""
+    }
 }
 
 const Profile = () => {
 
     const navigation = useNavigation()
 
-    const [user] = useState(initialUser)
-    const [orders] = useState([])
+    const [user] = useState(buildUser)
+    const [orders, setOrders] = useState([])
     const [addresses, setAddresses] = useState([])
     const [coupons] = useState([])
 
@@ -106,6 +117,26 @@ const Profile = () => {
     const [clothingSize, setClothingSize] = useState("M")
     const [shoeSize, setShoeSize] = useState("41")
     const [dropAlerts, setDropAlerts] = useState(false)
+
+    const loadAddresses = () =>
+        getMyEnderecos().then(setAddresses).catch(() => setAddresses([]))
+
+    useEffect(() => {
+        loadAddresses()
+
+        getMyPedidos()
+            .then((list) =>
+                setOrders(
+                    list.map((pedido) => ({
+                        id: pedido.id,
+                        productName: `Pedido de ${new Date(pedido.createdAt).toLocaleDateString("pt-BR")}`,
+                        status: pedido.status,
+                        total: pedido.totalFinal ?? pedido.total
+                    }))
+                )
+            )
+            .catch(() => setOrders([]))
+    }, [])
 
     const openModal = (name) => setActiveModal(name)
     const closeModal = () => setActiveModal(null)
@@ -168,7 +199,7 @@ const Profile = () => {
         setComplement("")
     }
 
-    const saveAddress = () => {
+    const saveAddress = async () => {
 
         if (
             cep.replace(/\D/g, "").length !== 8 ||
@@ -185,25 +216,23 @@ const Profile = () => {
             return
         }
 
-        const newAddress = {
-            id: Date.now().toString(),
-            cep,
-            street: street.trim(),
-            number: number.trim(),
-            neighborhood: neighborhood.trim(),
-            city: city.trim(),
-            state: state.trim(),
-            complement: complement.trim(),
-            primary: addresses.length === 0
+        try {
+            await createEndereco({
+                cep,
+                street: street.trim(),
+                number: number.trim(),
+                neighborhood: neighborhood.trim(),
+                city: city.trim(),
+                state: state.trim(),
+                complement: complement.trim()
+            })
+
+            await loadAddresses()
+            clearAddressForm()
+            openModal("addresses")
+        } catch (error) {
+            Alert.alert("Erro ao salvar endereço", error.message)
         }
-
-        setAddresses((current) => [
-            ...current,
-            newAddress
-        ])
-
-        clearAddressForm()
-        openModal("addresses")
     }
 
     const setPrimaryAddress = (id) => {
@@ -225,7 +254,14 @@ const Profile = () => {
                 {
                     text: "Excluir",
                     style: "destructive",
-                    onPress: () => {
+                    onPress: async () => {
+                        try {
+                            await deleteEndereco(id)
+                        } catch (error) {
+                            Alert.alert("Erro ao excluir endereço", error.message)
+                            return
+                        }
+
                         setAddresses((current) => {
                             const remaining = current.filter(
                                 (address) => address.id !== id
@@ -269,8 +305,7 @@ const Profile = () => {
                 {
                     text: "Sair",
                     onPress: () => {
-                        // Temporário: a autenticação real ainda
-                        // precisa invalidar a sessão/token.
+                        logout()
                         navigation.reset({
                             index: 0,
                             routes: [{ name: "Login" }]
@@ -740,7 +775,7 @@ const Profile = () => {
 
                                     {orders.length === 0 ? (
                                         <EmptyMessage
-                                            message="Você ainda não possui pedidos disponíveis. O histórico real será carregado da API da HC Store."
+                                            message="Você ainda não possui pedidos."
                                         />
                                     ) : (
                                         orders.map((order) => (
@@ -775,7 +810,7 @@ const Profile = () => {
 
                                     {addresses.length === 0 && (
                                         <EmptyMessage
-                                            message="Nenhum endereço cadastrado neste dispositivo."
+                                            message="Nenhum endereço cadastrado."
                                         />
                                     )}
 

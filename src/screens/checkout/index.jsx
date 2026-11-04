@@ -1,8 +1,10 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { Alert } from "react-native"
 
 import { Ionicons } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
 import { useCart } from "../../context/cart-context"
+import { createEndereco, createPedido, getMyEnderecos, getCurrentUser } from "../../services/api"
 
 import {
     CheckoutHeader,
@@ -173,8 +175,20 @@ const searchCep = async () => {
 
 
     const {
-        cartItems
+        cartItems,
+        clearCart
     } = useCart()
+
+    const [savedAddress, setSavedAddress] = useState(null)
+    const [placingOrder, setPlacingOrder] = useState(false)
+    const user = getCurrentUser()
+
+    // Endereço principal salvo no back
+    useEffect(() => {
+        getMyEnderecos()
+            .then((list) => setSavedAddress(list[0] ?? null))
+            .catch(() => setSavedAddress(null))
+    }, [])
 
 
     const subtotal = cartItems.reduce(
@@ -206,6 +220,56 @@ const searchCep = async () => {
         return value
             .toFixed(2)
             .replace(".", ",")
+    }
+
+    const finishOrder = async () => {
+
+        if (cartItems.length === 0) {
+            Alert.alert("Carrinho vazio", "Adicione produtos antes de finalizar.")
+            return
+        }
+
+        const address = alternativeAddress ?? savedAddress
+
+        if (!address) {
+            Alert.alert(
+                "Endereço obrigatório",
+                "Cadastre ou informe um endereço de entrega."
+            )
+            return
+        }
+
+        try {
+            setPlacingOrder(true)
+
+            let enderecoId = address.id
+
+            // Endereço informado só para esta compra: salva no back
+            if (alternativeAddress) {
+                const saved = await createEndereco(alternativeAddress)
+                enderecoId = saved.id
+            }
+
+            const pedido = await createPedido({
+                enderecoId: Number(enderecoId),
+                items: cartItems,
+                subtotal,
+                desconto: pixDiscount,
+                totalFinal: total
+            })
+
+            clearCart()
+
+            Alert.alert(
+                "Pedido realizado!",
+                `Seu pedido #${pedido.id} foi registrado e está aguardando pagamento.`,
+                [{ text: "OK", onPress: () => navigation.navigate("Home") }]
+            )
+        } catch (error) {
+            Alert.alert("Erro ao finalizar pedido", error.message)
+        } finally {
+            setPlacingOrder(false)
+        }
     }
 
     const useAlternativeAddress = () => {
@@ -373,7 +437,7 @@ const searchCep = async () => {
     <OptionTitle>
         {alternativeAddress
             ? "Endereço desta compra"
-            : "Lucas Mendes"
+            : (user?.nome ?? "Endereço principal")
         }
     </OptionTitle>
 
@@ -384,7 +448,9 @@ const searchCep = async () => {
                 ? ` - ${alternativeAddress.complement}`
                 : ""
             }`
-            : "Av. Paulista, 1000, Apto 82 - Bela Vista"
+            : savedAddress
+                ? `${savedAddress.street}, ${savedAddress.number}${savedAddress.complement ? ` - ${savedAddress.complement}` : ""}`
+                : "Nenhum endereço cadastrado. Use “Outro endereço”."
         }
 
     </OptionDescription>
@@ -393,7 +459,9 @@ const searchCep = async () => {
 
         {alternativeAddress
             ? `${alternativeAddress.neighborhood} - ${alternativeAddress.city}/${alternativeAddress.state} • CEP ${alternativeAddress.cep}`
-            : "São Paulo - SP, CEP 01310-100"
+            : savedAddress
+                ? `${savedAddress.neighborhood ? savedAddress.neighborhood + " - " : ""}${savedAddress.city}/${savedAddress.state} • CEP ${savedAddress.cep}`
+                : ""
         }
 
     </OptionDetail>
@@ -1033,7 +1101,7 @@ const searchCep = async () => {
 
 
 
-                <FinishButton>
+                <FinishButton onPress={finishOrder} disabled={placingOrder}>
 
                     <FinishButtonText>
 
