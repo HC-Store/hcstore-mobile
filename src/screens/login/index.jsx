@@ -3,11 +3,33 @@ import {Container, LogoContainer, LogoHC, LogoStore,LoginContainer, Title, Descr
     SignUpText
 } from "./style"
 
+import { useState } from "react"
+import { Alert } from "react-native"
 import { useNavigation } from "@react-navigation/native"
+import { login } from "../../services/api"
 
 
 const Login = () => {
     const navigation = useNavigation()
+    const [email, setEmail] = useState("")
+    const [senha, setSenha] = useState("")
+    const [loading, setLoading] = useState(false)
+
+    const handleLogin = async () => {
+        if (!email.trim() || !senha) {
+            Alert.alert("Atenção", "Informe e-mail e senha.")
+            return
+        }
+        try {
+            setLoading(true)
+            await login(email.trim(), senha)
+            navigation.navigate("Home")
+        } catch (error) {
+            Alert.alert("Erro ao entrar", error.message)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     return (
         <Container>
@@ -32,12 +54,16 @@ const Login = () => {
                     placeholderTextColor="#AAAAAA"
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    value={email}
+                    onChangeText={setEmail}
                 />
 
                 <Input
                     placeholder="SENHA"
                     placeholderTextColor="#AAAAAA"
                     secureTextEntry
+                    value={senha}
+                    onChangeText={setSenha}
                 />
 
                 <ForgotPassword>
@@ -46,8 +72,8 @@ const Login = () => {
                     </ForgotPasswordText>
                 </ForgotPassword>
 
-                <Btn onPress={() => navigation.navigate("Home")}>
-                    <BtnTitle>Entrar</BtnTitle>
+                <Btn onPress={handleLogin} disabled={loading}>
+                    <BtnTitle>{loading ? "Entrando..." : "Entrar"}</BtnTitle>
                 </Btn>
 
                 <AccountText>

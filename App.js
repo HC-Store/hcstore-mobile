@@ -1,4 +1,6 @@
-import { NavigationContainer } from "@react-navigation/native"
+import { useEffect, useState } from "react"
+import { ActivityIndicator, View } from "react-native"
+import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 
 import { CartProvider } from "./src/context/cart-context"
@@ -13,23 +15,49 @@ import Drops from "./src/screens/drops"
 import Profile from "./src/screens/profile"
 import Favorites from "./src/screens/favorites"
 import { FavoritesProvider } from "./src/context/favorites-context"
+import { restoreSession, setUnauthorizedHandler } from "./src/services/api"
 
 
 
 const Stack = createNativeStackNavigator()
+const navigationRef = createNavigationContainerRef()
 
 
 export default function App() {
+
+    // Lê o login salvo antes de decidir a primeira tela
+    const [initialRoute, setInitialRoute] = useState(null)
+
+    useEffect(() => {
+        restoreSession().then((logged) =>
+            setInitialRoute(logged ? "Home" : "Login")
+        )
+
+        // Token recusado pelo back (expirado): volta para o login
+        setUnauthorizedHandler(() => {
+            if (navigationRef.isReady()) {
+                navigationRef.reset({ index: 0, routes: [{ name: "Login" }] })
+            }
+        })
+    }, [])
+
+    if (!initialRoute) {
+        return (
+            <View style={{ flex: 1, justifyContent: "center", backgroundColor: "#000" }}>
+                <ActivityIndicator color="#00FF63" />
+            </View>
+        )
+    }
 
     return (
 
         <CartProvider>
             <FavoritesProvider>
 
-            <NavigationContainer>
+            <NavigationContainer ref={navigationRef}>
 
                 <Stack.Navigator
-                    initialRouteName="Login"
+                    initialRouteName={initialRoute}
                     screenOptions={{
                         headerShown: false
                     }}
