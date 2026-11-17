@@ -1,14 +1,38 @@
 import React, {
     createContext,
     useContext,
+    useEffect,
     useMemo,
+    useRef,
     useState
 } from "react"
+
+import { loadJSON, saveJSON } from "../services/storage"
+
+const FAVORITES_KEY = "@hcstore/favorites"
 
 const FavoritesContext = createContext(null)
 
 export const FavoritesProvider = ({ children }) => {
     const [favorites, setFavorites] = useState([])
+    const loaded = useRef(false)
+
+    useEffect(() => {
+        loadJSON(FAVORITES_KEY, []).then((saved) => {
+            if (Array.isArray(saved) && saved.length > 0) {
+                setFavorites((current) => (current.length === 0 ? saved : current))
+            }
+            loaded.current = true
+        })
+    }, [])
+
+    useEffect(() => {
+        if (loaded.current) {
+            saveJSON(FAVORITES_KEY, favorites)
+        }
+    }, [favorites])
+
+    const clearFavorites = () => setFavorites([])
 
     const getProductId = (product) =>
         product?.id ?? product?._id
@@ -57,7 +81,8 @@ export const FavoritesProvider = ({ children }) => {
             favorites,
             isFavorite,
             toggleFavorite,
-            removeFavorite
+            removeFavorite,
+            clearFavorites
         }),
         [favorites]
     )

@@ -1,12 +1,17 @@
+import { loadJSON, removeKey, saveJSON } from "./storage"
+
 // URL do back NestJS. Defina EXPO_PUBLIC_API_URL (ex.: https://seu-back.onrender.com/api).
 // No emulador Android, localhost é http://10.0.2.2:3000/api
 export const API_URL =
     process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000/api"
 
-/* ---------- SESSÃO (em memória) ---------- */
+/* ---------- SESSÃO (memória + armazenamento do aparelho) ---------- */
+
+const SESSION_KEY = "@hcstore/session"
 
 let token = null
 let currentUser = null
+let onUnauthorized = null
 
 export const setToken = (value) => {
     token = value
@@ -15,9 +20,28 @@ export const setToken = (value) => {
 export const getCurrentUser = () => currentUser
 export const isLoggedIn = () => !!token
 
+// Chamado quando o back recusa o token (expirado/inválido)
+export const setUnauthorizedHandler = (handler) => {
+    onUnauthorized = handler
+}
+
+// Lê a sessão salva ao abrir o app. Retorna true se há login válido salvo.
+export const restoreSession = async () => {
+    const saved = await loadJSON(SESSION_KEY)
+
+    if (saved?.token && saved?.user) {
+        token = saved.token
+        currentUser = saved.user
+        return true
+    }
+
+    return false
+}
+
 export const logout = () => {
     token = null
     currentUser = null
+    removeKey(SESSION_KEY)
 }
 
 /* ---------- HTTP ---------- */
@@ -33,6 +57,12 @@ async function request(path, { method = "GET", body } = {}) {
     })
 
     const data = await response.json().catch(() => null)
+
+    if (response.status === 401 && token && path !== "/auth/login") {
+        logout()
+        onUnauthorized?.()
+        throw new Error("Sua sessão expirou. Entre novamente.")
+    }
 
     if (!response.ok) {
         const message = Array.isArray(data?.message)
@@ -50,6 +80,7 @@ export const login = async (email, senha) => {
     const data = await request("/auth/login", { method: "POST", body: { email, senha } })
     setToken(data.access_token)
     currentUser = data.usuario
+    await saveJSON(SESSION_KEY, { token, user: currentUser })
     return data
 }
 
@@ -152,30 +183,30 @@ export const deleteEndereco = (id) =>
 
 export const getMyPedidos = () => request("/pedidos/meus")
 
-// items: [{ id, quantity, price }]  (formato do carrinho)
-export const createPedido = async ({ enderecoId, items, subtotal, desconto, totalFinal }) => {
-    const pedido = await request("/pedidos", {
+// Finaliza a compra. O app envia só os itens; o back confere preço, estoque
+// e cupom, cria o pedido e baixa o estoque.
+// items: [{ id, quantity }]  (formato do carrinho)
+export const finalizarPedido = ({ enderecoId, items, cupomCodigo }) =>
+    request("/pedidos/checkout", {
         method: "POST",
         body: {
-            usuarioId: currentUser.id,
             enderecoId,
-            total: subtotal,
-            desconto,
-            totalFinal
+            cupomCodigo: cupomCodigo || null,
+            items: items.map((item) => ({
+                produtoId: item.id,
+                quantidade: item.quantity
+            }))
         }
     })
 
-    for (const item of items) {
-        await request("/itempedido", {
-            method: "POST",
-            body: {
-                pedidoId: pedido.id,
-                produtoId: item.id,
-                quantidade: item.quantity,
-                preco: item.price
-            }
-        })
-    }
+/* ---------- CUPOM / PAGAMENTO / CONFIG DO SITE ---------- */
 
-    return pedido
-}
+// -> { cupomId, codigo, desconto }
+export const validarCupom = (codigo, subtotal) =>
+    request("/cupons/validar", { method: "POST", body: { codigo, subtotal } })
+
+// -> { paymentUrl }  (página de pagamento do PagBank)
+export const criarPagamento = (pedidoId) =>
+    request("/pagamentos/checkout", { method: "POST", body: { pedidoId } })
+
+export const getSiteConfig = () => request("/site-config")

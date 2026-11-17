@@ -1,6 +1,8 @@
 
 import { useEffect, useState } from "react"
 import { useNavigation } from "@react-navigation/native"
+import { Image } from "react-native"
+import { getSiteConfig } from "../../services/api"
 
 import Header from "../../components/header"
 import BottomMenu from "../../components/bottom-menu"
@@ -28,10 +30,24 @@ const Drops = () => {
 
     const navigation = useNavigation()
 
-    // ALTERAR PARA A DATA REAL DO PRÓXIMO DROP
-    const dropDate = new Date("2026-10-04T20:00:00")
+    // Dados do drop vêm da configuração do site (back)
+    const [drop, setDrop] = useState(null)
+
+    useEffect(() => {
+        getSiteConfig()
+            .then((config) => setDrop(config?.colecoes ?? null))
+            .catch(() => setDrop(null))
+    }, [])
+
+    const dropDate = drop?.dataLancamento
+        ? new Date(drop.dataLancamento)
+        : null
 
     const calculateTimeLeft = () => {
+        if (!dropDate || Number.isNaN(dropDate.getTime())) {
+            return { days: 0, hours: 0, minutes: 0 }
+        }
+
 
         const now = new Date()
         const difference = dropDate.getTime() - now.getTime()
@@ -61,7 +77,10 @@ const Drops = () => {
         calculateTimeLeft
     )
 
+    // Recria o contador quando os dados do drop chegam do back
     useEffect(() => {
+
+        setTimeLeft(calculateTimeLeft())
 
         const timer = setInterval(() => {
             setTimeLeft(calculateTimeLeft())
@@ -69,7 +88,7 @@ const Drops = () => {
 
         return () => clearInterval(timer)
 
-    }, [])
+    }, [drop])
 
     const formatNumber = (number) => {
         return String(number).padStart(2, "0")
@@ -96,7 +115,7 @@ const Drops = () => {
                 </LaunchText>
 
                 <DropTitle>
-                    DROP 01:
+                    {drop?.dropTitulo ?? "DROP"}
                 </DropTitle>
 
                 <TimerContainer>
@@ -140,16 +159,22 @@ const Drops = () => {
                     </ConceptTitle>
     
     
-     <DropImagePlaceholder>
-        <PlaceholderText>
-            IMAGEM DO DROP
-        </PlaceholderText>
-     </DropImagePlaceholder>
+     {/^https?:\/\//.test(drop?.bannerImagem ?? "") ? (
+                        <Image
+                            source={{ uri: drop.bannerImagem }}
+                            style={{ width: "100%", height: 200 }}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <DropImagePlaceholder>
+                            <PlaceholderText>
+                                {drop?.dropSubtitulo ?? "IMAGEM DO DROP"}
+                            </PlaceholderText>
+                        </DropImagePlaceholder>
+                    )}
 
                     <ConceptText>
-                        O OFF-GRID é um mergulho na textura brutalista
-                        da cidade. Criamos uma fusão entre a estética
-                        utilitária das ruas e o acabamento premium.
+                        {drop?.dropDescricao ?? "Em breve novidades."}
                     </ConceptText>
 
                     <CheckButton

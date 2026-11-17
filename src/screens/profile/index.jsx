@@ -22,6 +22,8 @@ import {
     logout
 } from "../../services/api"
 
+import { useCart } from "../../context/cart-context"
+import { useFavorites } from "../../context/favorites-context"
 import Header from "../../components/header"
 import BottomMenu from "../../components/bottom-menu"
 
@@ -97,6 +99,8 @@ const buildUser = () => {
 const Profile = () => {
 
     const navigation = useNavigation()
+    const { clearCart } = useCart()
+    const { clearFavorites } = useFavorites()
 
     const [user] = useState(buildUser)
     const [orders, setOrders] = useState([])
@@ -309,6 +313,8 @@ const Profile = () => {
                     text: "Sair",
                     onPress: () => {
                         logout()
+                        clearCart()
+                        clearFavorites()
                         navigation.reset({
                             index: 0,
                             routes: [{ name: "Login" }]

@@ -1,8 +1,14 @@
 import {
     createContext,
     useContext,
+    useEffect,
+    useRef,
     useState
 } from "react"
+
+import { loadJSON, saveJSON } from "../services/storage"
+
+const CART_KEY = "@hcstore/cart"
 
 
 const CartContext = createContext()
@@ -12,6 +18,24 @@ export const CartProvider = ({ children }) => {
 
     const [cartOpen, setCartOpen] = useState(false)
     const [cartItems, setCartItems] = useState([])
+    const loaded = useRef(false)
+
+    // Recupera o carrinho salvo no aparelho
+    useEffect(() => {
+        loadJSON(CART_KEY, []).then((saved) => {
+            if (Array.isArray(saved) && saved.length > 0) {
+                setCartItems((current) => (current.length === 0 ? saved : current))
+            }
+            loaded.current = true
+        })
+    }, [])
+
+    // Salva a cada mudança (só depois de ler o que estava salvo)
+    useEffect(() => {
+        if (loaded.current) {
+            saveJSON(CART_KEY, cartItems)
+        }
+    }, [cartItems])
 
 
     // ABRIR CARRINHO

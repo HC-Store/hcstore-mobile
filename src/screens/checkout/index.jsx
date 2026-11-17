@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react"
-import { Alert } from "react-native"
+import { Alert, Linking, Text, TextInput, TouchableOpacity, View } from "react-native"
 
 import { Ionicons } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
 import { useCart } from "../../context/cart-context"
-import { createEndereco, createPedido, getMyEnderecos, getCurrentUser } from "../../services/api"
+import {
+    createEndereco,
+    criarPagamento,
+    finalizarPedido,
+    getCurrentUser,
+    getMyEnderecos,
+    validarCupom
+} from "../../services/api"
 
 import {
     CheckoutHeader,
@@ -181,6 +188,11 @@ const searchCep = async () => {
 
     const [savedAddress, setSavedAddress] = useState(null)
     const [placingOrder, setPlacingOrder] = useState(false)
+
+    const [couponCode, setCouponCode] = useState("")
+    const [coupon, setCoupon] = useState(null)
+    const [couponError, setCouponError] = useState("")
+    const [couponLoading, setCouponLoading] = useState(false)
     const user = getCurrentUser()
 
     // Endereço principal salvo no back
@@ -205,14 +217,12 @@ const searchCep = async () => {
     )
 
 
-    const pixDiscount =
-        paymentMethod === "pix"
-            ? subtotal * 0.05
-            : 0
+    // Desconto do cupom (o back recalcula o valor oficial ao finalizar)
+    const couponDiscount = coupon ? Math.min(coupon.desconto, subtotal) : 0
 
 
     const total =
-        subtotal - pixDiscount
+        subtotal - couponDiscount
 
 
     const formatPrice = (value) => {
@@ -220,6 +230,30 @@ const searchCep = async () => {
         return value
             .toFixed(2)
             .replace(".", ",")
+    }
+
+    const applyCoupon = async () => {
+
+        if (!couponCode.trim()) {
+            return
+        }
+
+        try {
+            setCouponLoading(true)
+            setCouponError("")
+            setCoupon(await validarCupom(couponCode.trim(), subtotal))
+        } catch (error) {
+            setCoupon(null)
+            setCouponError(error.message)
+        } finally {
+            setCouponLoading(false)
+        }
+    }
+
+    const removeCoupon = () => {
+        setCoupon(null)
+        setCouponCode("")
+        setCouponError("")
     }
 
     const finishOrder = async () => {
@@ -239,34 +273,55 @@ const searchCep = async () => {
             return
         }
 
+        let pedido = null
+
         try {
             setPlacingOrder(true)
 
             let enderecoId = address.id
 
-            // Endereço informado só para esta compra: salva no back
+            // Endereço informado só para esta compra: salva no back (uma vez)
             if (alternativeAddress) {
-                const saved = await createEndereco(alternativeAddress)
-                enderecoId = saved.id
+                if (alternativeAddress.savedId) {
+                    enderecoId = alternativeAddress.savedId
+                } else {
+                    const saved = await createEndereco(alternativeAddress)
+                    enderecoId = saved.id
+                    setAlternativeAddress({ ...alternativeAddress, savedId: saved.id })
+                }
             }
 
-            const pedido = await createPedido({
+            // O back confere preço, estoque e cupom e cria o pedido
+            pedido = await finalizarPedido({
                 enderecoId: Number(enderecoId),
                 items: cartItems,
-                subtotal,
-                desconto: pixDiscount,
-                totalFinal: total
+                cupomCodigo: coupon?.codigo
             })
 
             clearCart()
+            setCoupon(null)
+
+            // Página de pagamento do PagBank
+            const { paymentUrl } = await criarPagamento(pedido.id)
+
+            await Linking.openURL(paymentUrl)
 
             Alert.alert(
                 "Pedido realizado!",
-                `Seu pedido #${pedido.id} foi registrado e está aguardando pagamento.`,
+                `Pedido #${pedido.id} criado. Conclua o pagamento na página que abriu.`,
                 [{ text: "OK", onPress: () => navigation.navigate("Home") }]
             )
         } catch (error) {
-            Alert.alert("Erro ao finalizar pedido", error.message)
+            if (pedido) {
+                // Pedido existe, mas o pagamento não abriu
+                Alert.alert(
+                    "Pedido criado",
+                    `Seu pedido #${pedido.id} foi registrado, mas não foi possível abrir o pagamento agora (${error.message}). Ele ficou como pendente no seu perfil.`,
+                    [{ text: "OK", onPress: () => navigation.navigate("Profile") }]
+                )
+            } else {
+                Alert.alert("Erro ao finalizar pedido", error.message)
+            }
         } finally {
             setPlacingOrder(false)
         }
@@ -917,15 +972,7 @@ const searchCep = async () => {
                             RESUMO DO PEDIDO
                         </CouponTitle>
 
-                        {
-                            paymentMethod === "pix" && (
-
-                                <DiscountText>
-                                    PIX -5%
-                                </DiscountText>
-
-                            )
-                        }
+                        
 
                     </CouponTop>
 
@@ -955,20 +1002,61 @@ const searchCep = async () => {
 
 
 
+                    <View style={{ marginVertical: 12 }}>
+
+                        {coupon ? (
+                            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                                <Text style={{ color: "#00FF63", fontWeight: "bold" }}>
+                                    Cupom {coupon.codigo} aplicado
+                                </Text>
+                                <TouchableOpacity onPress={removeCoupon}>
+                                    <Text style={{ color: "#AAAAAA" }}>REMOVER</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                <TextInput
+                                    value={couponCode}
+                                    onChangeText={setCouponCode}
+                                    placeholder="CUPOM DE DESCONTO"
+                                    placeholderTextColor="#777777"
+                                    autoCapitalize="characters"
+                                    style={{ flex: 1, borderWidth: 1, borderColor: "#444", color: "#FFF", paddingHorizontal: 10, height: 40 }}
+                                />
+                                <TouchableOpacity
+                                    onPress={applyCoupon}
+                                    disabled={couponLoading}
+                                    style={{ marginLeft: 8, backgroundColor: "#00FF63", paddingHorizontal: 14, height: 40, justifyContent: "center" }}
+                                >
+                                    <Text style={{ fontWeight: "bold" }}>
+                                        {couponLoading ? "..." : "APLICAR"}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        {couponError !== "" && (
+                            <Text style={{ color: "#FF5252", marginTop: 6 }}>
+                                {couponError}
+                            </Text>
+                        )}
+
+                    </View>
+
                     {
-                        paymentMethod === "pix" && (
+                        couponDiscount > 0 && (
 
                             <PriceRow>
 
                                 <PriceLabel>
-                                    Desconto PIX (5%)
+                                    Desconto ({coupon.codigo})
                                 </PriceLabel>
 
                                 <DiscountValue>
 
                                     - R$ {
                                         formatPrice(
-                                            pixDiscount
+                                            couponDiscount
                                         )
                                     }
 
@@ -1009,11 +1097,7 @@ const searchCep = async () => {
 
                             <TotalInstallments>
 
-                                {
-                                    paymentMethod === "pix"
-                                        ? "Valor com desconto no PIX"
-                                        : "Valor total do pedido"
-                                }
+                                Valor total do pedido
 
                             </TotalInstallments>
 
