@@ -1,9 +1,8 @@
 import { loadJSON, removeKey, saveJSON } from "./storage"
 
-// URL do back NestJS. Defina EXPO_PUBLIC_API_URL (ex.: https://seu-back.onrender.com/api).
-// No emulador Android, localhost é http://10.0.2.2:3000/api
+// URL do back NestJS (Render). Pode ser sobrescrita com EXPO_PUBLIC_API_URL.
 export const API_URL =
-    process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000/api"
+    process.env.EXPO_PUBLIC_API_URL || "https://hcstoreapi.onrender.com/api"
 
 /* ---------- SESSÃO (memória + armazenamento do aparelho) ---------- */
 
@@ -47,14 +46,22 @@ export const logout = () => {
 /* ---------- HTTP ---------- */
 
 async function request(path, { method = "GET", body } = {}) {
-    const response = await fetch(`${API_URL}${path}`, {
-        method,
-        headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: body ? JSON.stringify(body) : undefined
-    })
+    let response
+
+    try {
+        response = await fetch(`${API_URL}${path}`, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: body ? JSON.stringify(body) : undefined
+        })
+    } catch {
+        throw new Error(
+            "Não foi possível conectar ao servidor. Verifique sua internet e tente novamente."
+        )
+    }
 
     const data = await response.json().catch(() => null)
 
