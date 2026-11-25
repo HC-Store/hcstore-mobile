@@ -608,32 +608,38 @@ const Checkout = () => {
                                 <SectionHead number="3" title={`ITENS DO PEDIDO (${totalItems})`} />
 
                                 <Card>
-                                    {cartItems.map((product, i) => (
-                                        <ProductRow key={product.id} $last={i === cartItems.length - 1}>
-                                            <ProductThumb>
-                                                {product.image ? (
-                                                    <Image
-                                                        source={{ uri: product.image }}
-                                                        style={{ width: "100%", height: "100%" }}
-                                                        resizeMode="cover"
-                                                    />
-                                                ) : (
-                                                    <ThumbText>HC</ThumbText>
-                                                )}
-                                            </ProductThumb>
+                                    {cartItems.map((product, i) => {
+                                        // Pega o tamanho selecionado ou o tamanho padrão/único
+                                        const tamanhoExibido =
+                                            product.selectedSize ?? product.size ?? product.tamanho
 
-                                            <ProductInfo>
-                                                <ProductName numberOfLines={2}>{product.name}</ProductName>
-                                                <CardDetail>
-                                                    {product.size ? `Tam: ${product.size} • ` : ""}Qtd: {product.quantity}
-                                                </CardDetail>
-                                            </ProductInfo>
+                                        return (
+                                            <ProductRow key={`${product.id}-${tamanhoExibido || 'unico'}`} $last={i === cartItems.length - 1}>
+                                                <ProductThumb>
+                                                    {product.image ? (
+                                                        <Image
+                                                            source={{ uri: product.image }}
+                                                            style={{ width: "100%", height: "100%" }}
+                                                            resizeMode="cover"
+                                                        />
+                                                    ) : (
+                                                        <ThumbText>HC</ThumbText>
+                                                    )}
+                                                </ProductThumb>
 
-                                            <ProductPrice>
-                                                {formatPrice(Number(product.price || 0) * product.quantity)}
-                                            </ProductPrice>
-                                        </ProductRow>
-                                    ))}
+                                                <ProductInfo>
+                                                    <ProductName numberOfLines={2}>{product.name}</ProductName>
+                                                    <CardDetail>
+                                                        {tamanhoExibido ? `Tam: ${tamanhoExibido} • ` : ""}Qtd: {product.quantity}
+                                                    </CardDetail>
+                                                </ProductInfo>
+
+                                                <ProductPrice>
+                                                    {formatPrice(Number(product.price || 0) * product.quantity)}
+                                                </ProductPrice>
+                                            </ProductRow>
+                                        )
+                                    })}
                                 </Card>
                             </Section>
 
@@ -749,26 +755,17 @@ const Checkout = () => {
                                 </SecurityItem>
                             </Security>
 
-                            <TermsText>
-                                Ao finalizar, você concorda com os Termos de Compra e a Política de
-                                Privacidade da HC Store.
-                            </TermsText>
+                            {/* BOTÃO FINALIZAR */}
 
-                            {/* FINALIZAR */}
-
-                            <FinishButton onPress={finishOrder} disabled={placingOrder} activeOpacity={0.85} $loading={placingOrder}>
+                            <FinishButton onPress={finishOrder} disabled={placingOrder} activeOpacity={0.85}>
                                 {placingOrder ? (
                                     <ActivityIndicator color="#000" />
                                 ) : (
                                     <>
-                                        <FinishLeft>
-                                            <FinishLabel>FINALIZAR NO {metodoLabel}</FinishLabel>
-                                            <FinishValue>{formatPrice(total)}</FinishValue>
-                                        </FinishLeft>
-
-                                        <ArrowBox>
-                                            <Arrow>→</Arrow>
-                                        </ArrowBox>
+                                        <FinishText>CONCLUIR E PAGAR</FinishText>
+                                        <FinishArrowBox>
+                                            <FinishArrow>→</FinishArrow>
+                                        </FinishArrowBox>
                                     </>
                                 )}
                             </FinishButton>
@@ -792,26 +789,22 @@ const Container = styled.View`
     background-color: ${BG};
 `
 
-const Content = styled.ScrollView.attrs({
-    showsVerticalScrollIndicator: false,
-    contentContainerStyle: { paddingTop: 8, paddingHorizontal: 24, paddingBottom: 48 }
-})`
-    flex: 1;
-`
-
-/* Topo */
-
 const TopBar = styled.View`
+    height: 60px;
+    padding-top: ${TOP_SPACE - 42}px;
+    padding-horizontal: 24px;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding: ${TOP_SPACE}px 24px 14px 24px;
+    background-color: ${BG};
+    border-bottom-width: 1px;
+    border-bottom-color: ${BORDER};
 `
 
 const BackButton = styled.TouchableOpacity`
-    width: 40px;
-    height: 40px;
-    border-radius: 20px;
+    width: 38px;
+    height: 38px;
+    border-radius: 19px;
     border-width: 1px;
     border-color: ${BORDER};
     background-color: ${SURFACE};
@@ -826,50 +819,56 @@ const LogoRow = styled.View`
 
 const LogoBadge = styled.View`
     background-color: ${ACCENT};
-    border-radius: 7px;
-    padding: 3px 7px;
-    margin-right: 7px;
+    padding-horizontal: 6px;
+    padding-vertical: 2px;
+    border-radius: 4px;
+    margin-right: 4px;
 `
 
 const LogoHC = styled.Text`
     color: #000000;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 900;
+    letter-spacing: -0.5px;
 `
 
 const LogoStore = styled.Text`
     color: ${TEXT};
-    font-size: 15px;
-    font-weight: 800;
-    letter-spacing: 4px;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 2px;
 `
 
 const SecureBadge = styled.View`
-    width: 40px;
-    height: 40px;
-    border-radius: 20px;
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
     background-color: rgba(0, 230, 64, 0.1);
     align-items: center;
     justify-content: center;
 `
 
-/* Título */
+const Content = styled.ScrollView.attrs({
+    showsVerticalScrollIndicator: false,
+    contentContainerStyle: { padding: 24, paddingBottom: 100 }
+})`
+    flex: 1;
+`
 
 const Eyebrow = styled.Text`
     color: ${ACCENT};
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
     letter-spacing: 2.5px;
-    margin-top: 8px;
 `
 
 const PageTitle = styled.Text`
     color: ${TEXT};
-    font-size: 40px;
-    line-height: 44px;
+    font-size: 30px;
     font-weight: 900;
-    letter-spacing: -1.5px;
-    margin-top: 6px;
+    letter-spacing: -1px;
+    margin-top: 4px;
+    margin-bottom: 24px;
 `
 
 const Accent = styled.Text`
@@ -880,77 +879,77 @@ const Accent = styled.Text`
 
 const Steps = styled.View`
     flex-direction: row;
-    align-items: flex-start;
-    margin-top: 26px;
-    padding: 18px 14px;
-    border-radius: 18px;
-    border-width: 1px;
-    border-color: ${BORDER};
-    background-color: ${SURFACE};
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-horizontal: 10px;
 `
 
 const Step = styled.View`
     align-items: center;
-    width: 76px;
 `
 
 const StepCircle = styled.View`
-    width: 30px;
-    height: 30px;
-    border-radius: 15px;
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+    background-color: ${(p) =>
+        p.$state === "done" ? ACCENT : p.$state === "current" ? SURFACE_2 : SURFACE};
+    border-width: 1.5px;
+    border-color: ${(p) =>
+        p.$state === "done" ? ACCENT : p.$state === "current" ? ACCENT : BORDER};
     align-items: center;
     justify-content: center;
-    border-width: 2px;
-    border-color: ${(p) => (p.$state ? ACCENT : FAINT)};
-    background-color: ${(p) => (p.$state === "done" ? ACCENT : "transparent")};
+    margin-bottom: 6px;
 `
 
 const StepNumber = styled.Text`
-    color: ${(p) => (p.$state === "current" ? ACCENT : FAINT)};
-    font-size: 12px;
+    color: ${(p) => (p.$state === "current" ? ACCENT : MUTED)};
+    font-size: 11px;
     font-weight: 900;
 `
 
 const StepText = styled.Text`
-    color: ${(p) => (p.$state === "current" ? TEXT : p.$state === "done" ? MUTED : FAINT)};
+    color: ${(p) => (p.$state === "done" || p.$state === "current" ? TEXT : MUTED)};
     font-size: 10px;
-    font-weight: 800;
+    font-weight: ${(p) => (p.$state === "current" ? "800" : "600")};
     text-align: center;
-    margin-top: 8px;
+    line-height: 13px;
 `
 
 const StepLine = styled.View`
     flex: 1;
-    height: 2px;
-    margin-top: 14px;
-    border-radius: 1px;
+    height: 1.5px;
     background-color: ${(p) => (p.$done ? ACCENT : BORDER)};
+    margin-horizontal: 8px;
+    margin-bottom: 20px;
 `
 
 /* Seções */
 
 const Section = styled.View`
-    margin-top: 30px;
+    margin-bottom: 24px;
 `
 
 const SectionHeader = styled.View`
     flex-direction: row;
     align-items: center;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 `
 
 const SectionNumber = styled.View`
-    width: 24px;
-    height: 24px;
-    border-radius: 12px;
-    background-color: ${ACCENT};
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: rgba(0, 230, 64, 0.15);
     align-items: center;
     justify-content: center;
+    margin-right: 8px;
 `
 
 const SectionNumberText = styled.Text`
-    color: #000000;
-    font-size: 11px;
+    color: ${ACCENT};
+    font-size: 10px;
     font-weight: 900;
 `
 
@@ -959,88 +958,95 @@ const SectionTitle = styled.Text`
     color: ${TEXT};
     font-size: 12px;
     font-weight: 900;
-    letter-spacing: 2px;
-    margin-left: 10px;
+    letter-spacing: 1.5px;
 `
 
-const ChangeBtn = styled.TouchableOpacity`
-    padding: 4px 0;
-`
+const ChangeBtn = styled.TouchableOpacity``
 
 const ChangeText = styled.Text`
     color: ${ACCENT};
     font-size: 11px;
     font-weight: 800;
-    letter-spacing: 1.5px;
+    letter-spacing: 1px;
 `
-
-const RemoveText = styled.Text`
-    color: ${MUTED};
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 1.2px;
-`
-
-/* Cartões */
 
 const Card = styled.View`
-    padding: 18px;
+    padding: 16px;
     border-radius: 18px;
-    border-width: 1.5px;
+    border-width: 1px;
     border-color: ${(p) => (p.$selected ? "rgba(0, 230, 64, 0.4)" : BORDER)};
     background-color: ${SURFACE};
 `
 
 const CardTitle = styled.Text`
     color: ${TEXT};
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 800;
 `
 
 const CardText = styled.Text`
     color: ${TEXT};
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 13px;
+    line-height: 18px;
     margin-top: 4px;
-    opacity: 0.85;
 `
 
 const CardDetail = styled.Text`
     color: ${MUTED};
     font-size: 12px;
-    line-height: 18px;
-    margin-top: 3px;
+    margin-top: 2px;
 `
 
 /* Endereço */
 
 const AddressTop = styled.View`
     flex-direction: row;
+    align-items: flex-start;
+    margin-bottom: 14px;
 `
 
 const AddressIcon = styled.View`
-    width: 42px;
-    height: 42px;
-    border-radius: 13px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     background-color: rgba(0, 230, 64, 0.1);
     align-items: center;
     justify-content: center;
-    margin-right: 14px;
+    margin-right: 12px;
 `
 
 const AddressInfo = styled.View`
     flex: 1;
 `
 
+const OutlineBtn = styled.TouchableOpacity`
+    height: 44px;
+    border-radius: 12px;
+    border-width: 1.5px;
+    border-color: ${BORDER};
+    background-color: ${SURFACE_2};
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+`
+
+const OutlineBtnText = styled.Text`
+    color: ${TEXT};
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+`
+
 const AddressForm = styled.View`
-    margin-top: 8px;
-    padding-top: 6px;
+    margin-top: 16px;
+    padding-top: 16px;
     border-top-width: 1px;
     border-top-color: ${BORDER};
 `
 
 const Row = styled.View`
     flex-direction: row;
+    margin-bottom: 12px;
 `
 
 const Spacer = styled.View`
@@ -1048,89 +1054,60 @@ const Spacer = styled.View`
 `
 
 const FieldWrapper = styled.View`
-    margin-top: 14px;
-    ${(p) => (p.$half ? "flex: 1;" : "")}
-    ${(p) => (p.$small ? "width: 80px;" : "")}
+    flex: ${(p) => (p.$half ? 1 : p.$small ? 0.35 : 1)};
 `
 
 const FieldLabel = styled.Text`
     color: ${(p) => (p.$focused ? ACCENT : MUTED)};
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 800;
     letter-spacing: 1.5px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 `
 
-const FieldInput = styled.TextInput.attrs({
-    placeholderTextColor: FAINT,
-    selectionColor: ACCENT
-})`
-    height: 50px;
-    padding: 0 14px;
+const FieldInput = styled.TextInput`
+    height: 46px;
+    padding-horizontal: 14px;
     border-radius: 12px;
     border-width: 1.5px;
     border-color: ${(p) => (p.$focused ? ACCENT : BORDER)};
     background-color: ${SURFACE_2};
     color: ${TEXT};
-    font-size: 15px;
+    font-size: 13px;
+    font-weight: 700;
 `
 
 const CepBtn = styled.TouchableOpacity`
-    height: 50px;
-    margin-left: 12px;
-    padding: 0 20px;
+    height: 46px;
+    padding-horizontal: 16px;
     border-radius: 12px;
     background-color: ${ACCENT};
     align-items: center;
     justify-content: center;
+    margin-left: 8px;
 `
 
 const CepBtnText = styled.Text`
     color: #000000;
     font-size: 11px;
     font-weight: 900;
-    letter-spacing: 1.5px;
-`
-
-const ErrorText = styled.Text`
-    color: ${ERROR};
-    font-size: 12px;
-    margin-top: 8px;
-`
-
-/* Botões */
-
-const OutlineBtn = styled.TouchableOpacity`
-    height: 48px;
-    margin-top: 16px;
-    border-radius: 12px;
-    border-width: 1.5px;
-    border-color: #2e2e2e;
-    align-items: center;
-    justify-content: center;
-`
-
-const OutlineBtnText = styled.Text`
-    color: ${TEXT};
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: 1.8px;
+    letter-spacing: 1px;
 `
 
 const PrimaryBtn = styled.TouchableOpacity`
-    height: 50px;
-    margin-top: 18px;
+    height: 48px;
     border-radius: 12px;
     background-color: ${ACCENT};
     align-items: center;
     justify-content: center;
+    margin-top: 8px;
 `
 
 const PrimaryBtnText = styled.Text`
     color: #000000;
     font-size: 12px;
     font-weight: 900;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
 `
 
 /* Pagamento */
@@ -1138,22 +1115,22 @@ const PrimaryBtnText = styled.Text`
 const PayCard = styled.TouchableOpacity`
     flex-direction: row;
     align-items: center;
-    padding: 16px;
-    margin-bottom: 10px;
-    border-radius: 18px;
+    padding: 14px;
+    border-radius: 16px;
     border-width: 1.5px;
     border-color: ${(p) => (p.$selected ? ACCENT : BORDER)};
-    background-color: ${(p) => (p.$selected ? "#0F1611" : SURFACE)};
+    background-color: ${(p) => (p.$selected ? "rgba(0, 230, 64, 0.05)" : SURFACE)};
+    margin-bottom: 10px;
 `
 
 const PayIcon = styled.View`
-    width: 42px;
-    height: 42px;
-    border-radius: 13px;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
     background-color: ${(p) => (p.$selected ? ACCENT : "rgba(0, 230, 64, 0.1)")};
     align-items: center;
     justify-content: center;
-    margin-right: 14px;
+    margin-right: 12px;
 `
 
 const PayContent = styled.View`
@@ -1164,13 +1141,15 @@ const PayContent = styled.View`
 const PayTitleRow = styled.View`
     flex-direction: row;
     align-items: center;
+    margin-bottom: 2px;
 `
 
 const PayTag = styled.View`
+    background-color: rgba(0, 230, 64, 0.15);
+    padding-horizontal: 6px;
+    padding-vertical: 2px;
+    border-radius: 4px;
     margin-left: 8px;
-    padding: 3px 7px;
-    border-radius: 999px;
-    background-color: rgba(0, 230, 64, 0.12);
 `
 
 const PayTagText = styled.Text`
@@ -1181,9 +1160,9 @@ const PayTagText = styled.Text`
 `
 
 const RadioOuter = styled.View`
-    width: 22px;
-    height: 22px;
-    border-radius: 11px;
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
     border-width: 2px;
     border-color: ${(p) => (p.$selected ? ACCENT : FAINT)};
     align-items: center;
@@ -1198,37 +1177,36 @@ const RadioInner = styled.View`
 `
 
 const HintText = styled.Text`
-    color: ${FAINT};
-    font-size: 12px;
-    line-height: 18px;
+    color: ${MUTED};
+    font-size: 11px;
+    text-align: center;
     margin-top: 4px;
 `
 
-/* Itens */
+/* Produtos / Itens */
 
 const ProductRow = styled.View`
     flex-direction: row;
     align-items: center;
-    padding-bottom: ${(p) => (p.$last ? 0 : 14)}px;
-    margin-bottom: ${(p) => (p.$last ? 0 : 14)}px;
+    padding-vertical: 10px;
     border-bottom-width: ${(p) => (p.$last ? 0 : 1)}px;
     border-bottom-color: ${BORDER};
 `
 
 const ProductThumb = styled.View`
-    width: 58px;
+    width: 48px;
     height: 58px;
-    border-radius: 14px;
+    border-radius: 10px;
     overflow: hidden;
     background-color: ${SURFACE_2};
     align-items: center;
     justify-content: center;
-    margin-right: 14px;
+    margin-right: 12px;
 `
 
 const ThumbText = styled.Text`
     color: ${FAINT};
-    font-size: 16px;
+    font-size: 12px;
     font-weight: 900;
 `
 
@@ -1239,55 +1217,50 @@ const ProductInfo = styled.View`
 
 const ProductName = styled.Text`
     color: ${TEXT};
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
-    line-height: 19px;
+    line-height: 17px;
 `
 
 const ProductPrice = styled.Text`
     color: ${TEXT};
-    font-size: 14px;
-    font-weight: 900;
+    font-size: 13px;
+    font-weight: 800;
 `
 
-/* Cupom */
+/* Resumo */
 
 const CouponRow = styled.View`
     flex-direction: row;
+    align-items: center;
 `
 
 const CouponInputBox = styled.View`
     flex: 1;
-    height: 50px;
+    height: 44px;
     flex-direction: row;
     align-items: center;
-    padding: 0 14px;
+    padding-horizontal: 12px;
     border-radius: 12px;
     border-width: 1.5px;
     border-color: ${(p) => (p.$error ? ERROR : BORDER)};
     background-color: ${SURFACE_2};
+    margin-right: 8px;
 `
 
-const CouponInput = styled.TextInput.attrs({
-    placeholderTextColor: FAINT,
-    selectionColor: ACCENT
-})`
+const CouponInput = styled.TextInput`
     flex: 1;
-    height: 100%;
-    margin-left: 10px;
     color: ${TEXT};
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 1px;
+    margin-left: 8px;
 `
 
 const CouponBtn = styled.TouchableOpacity`
-    height: 50px;
-    margin-left: 10px;
-    padding: 0 18px;
+    height: 44px;
+    padding-horizontal: 16px;
     border-radius: 12px;
-    background-color: ${ACCENT};
-    opacity: ${(p) => (p.$disabled ? 0.4 : 1)};
+    background-color: ${(p) => (p.$disabled ? BORDER : ACCENT)};
     align-items: center;
     justify-content: center;
 `
@@ -1296,19 +1269,18 @@ const CouponBtnText = styled.Text`
     color: #000000;
     font-size: 11px;
     font-weight: 900;
-    letter-spacing: 1.5px;
+    letter-spacing: 1px;
 `
 
 const CouponApplied = styled.View`
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding: 14px;
+    padding: 10px 14px;
     border-radius: 12px;
-    border-width: 1.5px;
-    border-style: dashed;
-    border-color: rgba(0, 230, 64, 0.5);
-    background-color: rgba(0, 230, 64, 0.06);
+    background-color: rgba(0, 230, 64, 0.1);
+    border-width: 1px;
+    border-color: rgba(0, 230, 64, 0.3);
 `
 
 const CouponLeft = styled.View`
@@ -1318,41 +1290,46 @@ const CouponLeft = styled.View`
 
 const CouponAppliedText = styled.Text`
     color: ${ACCENT};
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 800;
     margin-left: 8px;
 `
 
-/* Valores */
+const RemoveText = styled.Text`
+    color: ${ERROR};
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1px;
+`
 
 const PriceRow = styled.View`
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    margin-top: 10px;
+    margin-bottom: 8px;
 `
 
 const PriceLabel = styled.Text`
     color: ${MUTED};
-    font-size: 14px;
+    font-size: 13px;
 `
 
 const PriceValue = styled.Text`
     color: ${TEXT};
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
 `
 
 const GreenValue = styled.Text`
     color: ${ACCENT};
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
 `
 
 const Divider = styled.View`
     height: 1px;
     background-color: ${BORDER};
-    margin: 16px 0;
+    margin-vertical: 12px;
 `
 
 const TotalRow = styled.View`
@@ -1369,21 +1346,28 @@ const TotalLabel = styled.Text`
 
 const TotalPrice = styled.Text`
     color: ${ACCENT};
-    font-size: 26px;
+    font-size: 20px;
     font-weight: 900;
-    letter-spacing: -0.8px;
+    letter-spacing: -0.5px;
+`
+
+const ErrorText = styled.Text`
+    color: ${ERROR};
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 6px;
 `
 
 /* Segurança */
 
 const Security = styled.View`
     flex-direction: row;
-    margin-top: 24px;
-    padding: 16px 8px;
-    border-radius: 18px;
+    padding: 16px;
+    border-radius: 16px;
     border-width: 1px;
     border-color: ${BORDER};
     background-color: ${SURFACE};
+    margin-bottom: 24px;
 `
 
 const SecurityItem = styled.View`
@@ -1391,99 +1375,81 @@ const SecurityItem = styled.View`
     align-items: center;
 `
 
+const SecurityTitle = styled.Text`
+    color: ${TEXT};
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    margin-top: 6px;
+`
+
+const SecurityText = styled.Text`
+    color: ${MUTED};
+    font-size: 9px;
+    margin-top: 1px;
+`
+
 const SecurityDivider = styled.View`
     width: 1px;
     background-color: ${BORDER};
 `
 
-const SecurityTitle = styled.Text`
-    color: ${TEXT};
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: 1.2px;
-    margin-top: 8px;
-`
-
-const SecurityText = styled.Text`
-    color: ${MUTED};
-    font-size: 10px;
-    margin-top: 2px;
-`
-
-const TermsText = styled.Text`
-    color: ${FAINT};
-    font-size: 11px;
-    line-height: 17px;
-    text-align: center;
-    margin: 20px 10px 18px 10px;
-`
-
-/* Finalizar */
+/* Botão finalizar */
 
 const FinishButton = styled.TouchableOpacity`
-    height: 66px;
-    border-radius: 18px;
+    height: 58px;
+    border-radius: 16px;
     background-color: ${ACCENT};
-    opacity: ${(p) => (p.$loading ? 0.85 : 1)};
     flex-direction: row;
     align-items: center;
-    justify-content: ${(p) => (p.$loading ? "center" : "space-between")};
-    padding: 0 10px 0 22px;
+    justify-content: space-between;
+    padding-left: 20px;
+    padding-right: 8px;
     shadow-color: ${ACCENT};
     shadow-offset: 0px 8px;
     shadow-opacity: 0.35;
     shadow-radius: 18px;
     elevation: 8;
+    margin-bottom: 20px;
 `
 
-const FinishLeft = styled.View``
-
-const FinishLabel = styled.Text`
-    color: rgba(0, 0, 0, 0.65);
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: 1.8px;
-`
-
-const FinishValue = styled.Text`
+const FinishText = styled.Text`
     color: #000000;
-    font-size: 20px;
+    font-size: 13px;
     font-weight: 900;
-    margin-top: 2px;
+    letter-spacing: 2px;
 `
 
-const ArrowBox = styled.View`
-    width: 46px;
-    height: 46px;
-    border-radius: 13px;
+const FinishArrowBox = styled.View`
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
     background-color: #000000;
     align-items: center;
     justify-content: center;
 `
 
-const Arrow = styled.Text`
+const FinishArrow = styled.Text`
     color: ${ACCENT};
-    font-size: 20px;
+    font-size: 19px;
     font-weight: 900;
 `
 
 /* Vazio */
 
 const EmptyBox = styled.View`
-    margin-top: 30px;
-    padding: 32px 24px;
-    border-radius: 22px;
-    border-width: 1px;
-    border-style: dashed;
-    border-color: ${BORDER};
     align-items: center;
+    justify-content: center;
+    padding-vertical: 60px;
 `
 
 const EmptyIcon = styled.View`
-    width: 70px;
-    height: 70px;
-    border-radius: 35px;
+    width: 64px;
+    height: 64px;
+    border-radius: 32px;
     background-color: rgba(0, 230, 64, 0.1);
+    border-width: 1px;
+    border-color: rgba(0, 230, 64, 0.3);
     align-items: center;
     justify-content: center;
     margin-bottom: 16px;
@@ -1497,7 +1463,6 @@ const EmptyTitle = styled.Text`
 
 const EmptyText = styled.Text`
     color: ${MUTED};
-    font-size: 14px;
-    margin-top: 6px;
-    text-align: center;
+    font-size: 13px;
+    margin-top: 4px;
 `

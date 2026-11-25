@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Dimensions, Image, RefreshControl } from "react-native"
+import { Dimensions, Image, RefreshControl, Platform, StatusBar } from "react-native"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import styled from "styled-components/native"
 
@@ -18,6 +18,8 @@ const ACCENT = "#00E640"
 const TEXT = "#F5F5F5"
 const MUTED = "#8C8C8C"
 const FAINT = "#4A4A4A"
+
+const TOP_SPACE = Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 8 : 44
 
 const { width } = Dimensions.get("window")
 const CARD_WIDTH = (width - 48 - 14) / 2
@@ -191,7 +193,11 @@ const ProductList = () => {
 
     return (
         <Container>
-            <Header />
+            <StatusBar backgroundColor={BG} barStyle="light-content" />
+
+            <HeaderWrapper>
+                <Header />
+            </HeaderWrapper>
 
             {/* TOPO */}
 
@@ -314,6 +320,11 @@ export default ProductList
 
 const Container = styled.View`
     flex: 1;
+    background-color: ${BG};
+`
+
+const HeaderWrapper = styled.View`
+    padding-top: ${TOP_SPACE}px;
     background-color: ${BG};
 `
 

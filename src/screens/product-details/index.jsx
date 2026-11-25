@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { ActivityIndicator, Dimensions, Image } from "react-native"
+import { ActivityIndicator, Dimensions, Image, Platform, StatusBar } from "react-native"
 import { useRoute } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
 import styled from "styled-components/native"
@@ -21,6 +21,8 @@ const ACCENT = "#00E640"
 const TEXT = "#F5F5F5"
 const MUTED = "#8C8C8C"
 const FAINT = "#4A4A4A"
+
+const TOP_SPACE = Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 8 : 44
 
 const { width } = Dimensions.get("window")
 const IMAGE_SIZE = width - 48
@@ -66,6 +68,7 @@ const ProductDetails = () => {
     const [product, setProduct] = useState(route.params?.product ?? null)
     const [openSection, setOpenSection] = useState("desc")
     const [selectedImage, setSelectedImage] = useState(null)
+    const [selectedSize, setSelectedSize] = useState(null)
 
     // Atualiza com os dados completos do back (descrição, imagens...)
     useEffect(() => {
@@ -79,7 +82,10 @@ const ProductDetails = () => {
     if (!product) {
         return (
             <Container>
-                <Header />
+                <StatusBar backgroundColor={BG} barStyle="light-content" />
+                <HeaderWrapper>
+                    <Header />
+                </HeaderWrapper>
                 <LoadingBox>
                     <ActivityIndicator color={ACCENT} size="large" />
                     <LoadingText>Carregando produto...</LoadingText>
@@ -104,6 +110,11 @@ const ProductDetails = () => {
         .map((t) => t.trim())
         .filter(Boolean)
 
+    // Verifica se é tamanho único
+    const isTamanhoUnico =
+        tamanhos.length === 1 &&
+        ["único", "unico", "u"].includes(tamanhos[0].toLowerCase())
+
     const descricao =
         [
             product.descricao,
@@ -123,13 +134,26 @@ const ProductDetails = () => {
             .join("\n") || "Sem informações de tamanho."
 
     const handleAddToCart = () => {
-        addToCart(product)
+        const tamanhoFinal =
+            selectedSize || (tamanhos.length === 1 ? tamanhos[0] : null)
+
+        const productToAdd = {
+            ...product,
+            selectedSize: tamanhoFinal
+        }
+
+        addToCart(productToAdd)
         openCart()
     }
 
     return (
         <Container>
-            <Header />
+            <StatusBar backgroundColor={BG} barStyle="light-content" />
+
+            {/* ENVOLVEMOS O HEADER COM UM ESPAÇAMENTO PARA DESCER A LOGO E OS ÍCONES */}
+            <HeaderWrapper>
+                <Header />
+            </HeaderWrapper>
 
             <Content>
 
@@ -210,17 +234,25 @@ const ProductDetails = () => {
                     ou <InstallmentStrong>3x de {formatPrice(price / 3)}</InstallmentStrong> sem juros
                 </Installment>
 
-                {/* TAMANHOS */}
+                {/* TAMANHOS (Exibe apenas se houver tamanhos e não for tamanho único) */}
 
-                {tamanhos.length > 0 && (
+                {tamanhos.length > 0 && !isTamanhoUnico && (
                     <>
                         <SectionLabel>TAMANHOS DISPONÍVEIS</SectionLabel>
                         <SizesRow>
-                            {tamanhos.map((t) => (
-                                <SizeChip key={t}>
-                                    <SizeText>{t}</SizeText>
-                                </SizeChip>
-                            ))}
+                            {tamanhos.map((t) => {
+                                const isSelected = selectedSize === t
+                                return (
+                                    <SizeChip
+                                        key={t}
+                                        $selected={isSelected}
+                                        onPress={() => setSelectedSize(t)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <SizeText $selected={isSelected}>{t}</SizeText>
+                                    </SizeChip>
+                                )
+                            })}
                         </SizesRow>
                     </>
                 )}
@@ -314,6 +346,11 @@ export default ProductDetails
 
 const Container = styled.View`
     flex: 1;
+    background-color: ${BG};
+`
+
+const HeaderWrapper = styled.View`
+    padding-top: ${TOP_SPACE}px;
     background-color: ${BG};
 `
 
@@ -495,21 +532,21 @@ const SizesRow = styled.View`
     flex-wrap: wrap;
 `
 
-const SizeChip = styled.View`
+const SizeChip = styled.TouchableOpacity`
     min-width: 48px;
     height: 44px;
     padding: 0 14px;
     margin: 0 8px 8px 0;
     border-radius: 12px;
     border-width: 1.5px;
-    border-color: ${BORDER};
-    background-color: ${SURFACE};
+    border-color: ${(p) => (p.$selected ? ACCENT : BORDER)};
+    background-color: ${(p) => (p.$selected ? "rgba(0, 230, 64, 0.15)" : SURFACE)};
     align-items: center;
     justify-content: center;
 `
 
 const SizeText = styled.Text`
-    color: ${TEXT};
+    color: ${(p) => (p.$selected ? ACCENT : TEXT)};
     font-size: 14px;
     font-weight: 800;
 `

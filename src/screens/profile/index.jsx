@@ -6,7 +6,8 @@ import {
     Modal,
     Platform,
     ScrollView,
-    Switch
+    Switch,
+    StatusBar
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
@@ -39,6 +40,8 @@ const TEXT = "#F5F5F5"
 const MUTED = "#8C8C8C"
 const FAINT = "#4A4A4A"
 const DANGER = "#FF5A5F"
+
+const TOP_SPACE = Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 8 : 44
 
 /* ================================================================== */
 /*  AJUDANTES                                                          */
@@ -346,7 +349,11 @@ const Profile = () => {
 
     return (
         <Container>
-            <Header />
+            <StatusBar backgroundColor={BG} barStyle="light-content" />
+
+            <HeaderWrapper>
+                <Header />
+            </HeaderWrapper>
 
             <Content>
 
@@ -793,69 +800,7 @@ const Profile = () => {
                                             icon="pricetag-outline"
                                             message="Nenhum cupom disponível no momento."
                                         />
-                                    ) : (
-                                        coupons.map((coupon) => (
-                                            <ItemCard key={coupon.id} $highlight>
-                                                <ItemTitle style={{ color: ACCENT }}>
-                                                    {coupon.code}
-                                                </ItemTitle>
-                                            </ItemCard>
-                                        ))
-                                    ))}
-
-                                {/* TAMANHOS */}
-
-                                {activeModal === "sizes" && (
-                                    <>
-                                        <GroupLabel>TAMANHO DE ROUPAS</GroupLabel>
-
-                                        <OptionsWrap>
-                                            {["PP", "P", "M", "G", "GG", "XG"].map((size) => (
-                                                <Option
-                                                    key={size}
-                                                    title={size}
-                                                    selected={clothingSize === size}
-                                                    onPress={() => setClothingSize(size)}
-                                                />
-                                            ))}
-                                        </OptionsWrap>
-
-                                        <GroupLabel>NUMERAÇÃO DE CALÇADOS</GroupLabel>
-
-                                        <OptionsWrap>
-                                            {Array.from({ length: 12 }, (_, i) => String(i + 35)).map(
-                                                (size) => (
-                                                    <Option
-                                                        key={size}
-                                                        title={size}
-                                                        selected={shoeSize === size}
-                                                        onPress={() => setShoeSize(size)}
-                                                    />
-                                                )
-                                            )}
-                                        </OptionsWrap>
-
-                                        <ActionButton title="CONFIRMAR" onPress={closeModal} />
-                                    </>
-                                )}
-
-                                {/* FAQ */}
-
-                                {activeModal === "faq" && (
-                                    <EmptyMessage
-                                        icon="help-circle-outline"
-                                        message="As perguntas frequentes, políticas de troca e devolução e canais de suporte serão disponibilizados aqui."
-                                    />
-                                )}
-
-                                {/* PRIVACIDADE */}
-
-                                {activeModal === "privacy" && (
-                                    <EmptyMessage
-                                        icon="shield-checkmark-outline"
-                                        message="Os documentos oficiais de privacidade e termos da HC Store serão vinculados nesta área."
-                                    />
-                                )}
+                                    ) : null)}
 
                             </ScrollView>
                         </Sheet>
@@ -877,6 +822,11 @@ const Container = styled.View`
     background-color: ${BG};
 `
 
+const HeaderWrapper = styled.View`
+    padding-top: ${TOP_SPACE}px;
+    background-color: ${BG};
+`
+
 const Content = styled.ScrollView.attrs({
     showsVerticalScrollIndicator: false,
     contentContainerStyle: { paddingTop: 16, paddingHorizontal: 24, paddingBottom: 120 }
@@ -887,7 +837,7 @@ const Content = styled.ScrollView.attrs({
 const EyebrowRow = styled.View`
     flex-direction: row;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 `
 
 const EyebrowDash = styled.View`
@@ -904,14 +854,13 @@ const Eyebrow = styled.Text`
     letter-spacing: 2.5px;
 `
 
-/* Perfil */
-
 const ProfileCard = styled.View`
     background-color: ${SURFACE};
+    border-radius: 20px;
     border-width: 1px;
     border-color: ${BORDER};
-    border-radius: 22px;
     padding: 20px;
+    margin-bottom: 28px;
 `
 
 const ProfileTop = styled.View`
@@ -920,24 +869,26 @@ const ProfileTop = styled.View`
 `
 
 const Avatar = styled.View`
-    width: 68px;
-    height: 68px;
-    border-radius: 34px;
-    background-color: ${ACCENT};
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+    background-color: rgba(0, 230, 64, 0.1);
+    border-width: 1.5px;
+    border-color: rgba(0, 230, 64, 0.35);
     align-items: center;
     justify-content: center;
-    margin-right: 16px;
 `
 
 const AvatarText = styled.Text`
-    color: #000000;
-    font-size: 24px;
+    color: ${ACCENT};
+    font-size: 18px;
     font-weight: 900;
-    letter-spacing: -1px;
+    letter-spacing: -0.5px;
 `
 
 const ProfileInfo = styled.View`
     flex: 1;
+    margin-left: 16px;
 `
 
 const NameRow = styled.View`
@@ -947,36 +898,36 @@ const NameRow = styled.View`
 
 const Name = styled.Text`
     color: ${TEXT};
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 900;
+    letter-spacing: -0.5px;
     flex-shrink: 1;
 `
 
 const Email = styled.Text`
     color: ${MUTED};
     font-size: 13px;
-    margin-top: 3px;
+    margin-top: 2px;
 `
 
 const MemberPill = styled.View`
     align-self: flex-start;
-    margin-top: 10px;
+    background-color: rgba(0, 230, 64, 0.08);
     border-radius: 999px;
-    border-width: 1px;
-    border-color: ${BORDER};
-    padding: 4px 10px;
+    padding: 3px 8px;
+    margin-top: 8px;
 `
 
 const MemberText = styled.Text`
-    color: ${MUTED};
+    color: ${ACCENT};
     font-size: 9px;
     font-weight: 800;
-    letter-spacing: 1.5px;
+    letter-spacing: 1.2px;
 `
 
 const LevelArea = styled.View`
     margin-top: 20px;
-    padding-top: 18px;
+    padding-top: 16px;
     border-top-width: 1px;
     border-top-color: ${BORDER};
 `
@@ -985,6 +936,7 @@ const LevelTop = styled.View`
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    margin-bottom: 8px;
 `
 
 const LevelRow = styled.View`
@@ -993,56 +945,50 @@ const LevelRow = styled.View`
 `
 
 const LevelText = styled.Text`
-    color: ${TEXT};
-    font-size: 12px;
+    color: ${ACCENT};
+    font-size: 10px;
     font-weight: 900;
-    letter-spacing: 2px;
-    margin-left: 6px;
+    letter-spacing: 1.5px;
+    margin-left: 5px;
 `
 
 const Points = styled.Text`
-    color: ${ACCENT};
+    color: ${TEXT};
     font-size: 11px;
-    font-weight: 900;
-    letter-spacing: 1.5px;
+    font-weight: 800;
 `
 
 const ProgressBackground = styled.View`
     height: 6px;
+    background-color: ${BORDER};
     border-radius: 3px;
-    background-color: ${SURFACE_2};
-    margin-top: 12px;
     overflow: hidden;
 `
 
 const ProgressBar = styled.View`
     height: 100%;
-    border-radius: 3px;
     background-color: ${ACCENT};
+    border-radius: 3px;
 `
 
 const LevelDescription = styled.Text`
-    color: ${FAINT};
-    font-size: 12px;
-    line-height: 18px;
-    margin-top: 10px;
+    color: ${MUTED};
+    font-size: 11px;
+    margin-top: 8px;
 `
-
-/* Seções */
 
 const SectionHeader = styled.View`
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    margin-top: 32px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 `
 
 const SectionTitle = styled.Text`
     color: ${TEXT};
     font-size: 13px;
     font-weight: 900;
-    letter-spacing: 2.5px;
+    letter-spacing: 2px;
 `
 
 const SectionAction = styled.TouchableOpacity`
@@ -1056,63 +1002,62 @@ const SectionActionText = styled.Text`
     letter-spacing: 1.5px;
 `
 
-/* Último pedido */
-
 const OrderCard = styled.View`
     background-color: ${SURFACE};
+    border-radius: 18px;
     border-width: 1px;
     border-color: ${BORDER};
-    border-radius: 20px;
     padding: 18px;
+    margin-bottom: 28px;
 `
 
 const OrderTop = styled.View`
     flex-direction: row;
     align-items: center;
+    margin-bottom: 14px;
 `
 
 const OrderIcon = styled.View`
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
     background-color: rgba(0, 230, 64, 0.1);
     align-items: center;
     justify-content: center;
-    margin-right: 14px;
 `
 
 const OrderInfo = styled.View`
     flex: 1;
+    margin-left: 12px;
+    margin-right: 12px;
 `
 
 const OrderName = styled.Text`
     color: ${TEXT};
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 800;
 `
 
 const OrderDetails = styled.Text`
     color: ${MUTED};
     font-size: 12px;
-    margin-top: 3px;
+    margin-top: 2px;
 `
 
 const OrderPrice = styled.Text`
     color: ${ACCENT};
     font-size: 15px;
     font-weight: 900;
-    margin-left: 10px;
 `
 
 const StatusPill = styled.View`
     flex-direction: row;
     align-items: center;
+    background-color: rgba(0, 230, 64, 0.08);
     align-self: flex-start;
-    margin-top: 16px;
-    margin-bottom: 4px;
-    padding: 6px 12px;
+    padding: 5px 10px;
     border-radius: 999px;
-    background-color: rgba(0, 230, 64, 0.1);
+    margin-bottom: 16px;
 `
 
 const StatusDot = styled.View`
@@ -1120,84 +1065,80 @@ const StatusDot = styled.View`
     height: 6px;
     border-radius: 3px;
     background-color: ${ACCENT};
-    margin-right: 8px;
+    margin-right: 6px;
 `
 
 const StatusText = styled.Text`
     color: ${ACCENT};
     font-size: 10px;
     font-weight: 900;
-    letter-spacing: 1.5px;
+    letter-spacing: 1px;
 `
-
-/* Grid */
 
 const Grid = styled.View`
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: space-between;
+    margin-bottom: 28px;
 `
 
 const GridCard = styled.TouchableOpacity`
-    width: 48.5%;
+    width: 48%;
     background-color: ${SURFACE};
+    border-radius: 16px;
     border-width: 1px;
     border-color: ${BORDER};
-    border-radius: 18px;
     padding: 16px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 `
 
 const GridTop = styled.View`
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
 `
 
 const GridIcon = styled.View`
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     background-color: rgba(0, 230, 64, 0.1);
     align-items: center;
     justify-content: center;
 `
 
 const GridBadge = styled.View`
+    background-color: ${SURFACE_2};
     border-radius: 999px;
-    border-width: 1px;
-    border-color: ${BORDER};
     padding: 3px 8px;
 `
 
 const GridBadgeText = styled.Text`
     color: ${MUTED};
-    font-size: 8px;
-    font-weight: 900;
-    letter-spacing: 1px;
+    font-size: 9px;
+    font-weight: 800;
 `
 
 const GridTitle = styled.Text`
     color: ${TEXT};
-    font-size: 15px;
-    font-weight: 800;
+    font-size: 14px;
+    font-weight: 900;
 `
 
 const GridDescription = styled.Text`
     color: ${MUTED};
     font-size: 12px;
-    margin-top: 3px;
+    margin-top: 2px;
 `
-
-/* Menu */
 
 const MenuContainer = styled.View`
     background-color: ${SURFACE};
+    border-radius: 18px;
     border-width: 1px;
     border-color: ${BORDER};
-    border-radius: 20px;
     padding: 0 16px;
+    margin-bottom: 28px;
 `
 
 const MenuRow = styled.TouchableOpacity`
@@ -1209,13 +1150,13 @@ const MenuRow = styled.TouchableOpacity`
 `
 
 const MenuIcon = styled.View`
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
     background-color: rgba(0, 230, 64, 0.1);
     align-items: center;
     justify-content: center;
-    margin-right: 14px;
+    margin-right: 12px;
 `
 
 const MenuContent = styled.View`
@@ -1225,70 +1166,202 @@ const MenuContent = styled.View`
 
 const MenuTitle = styled.Text`
     color: ${TEXT};
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 13px;
+    font-weight: 800;
 `
 
 const MenuDescription = styled.Text`
     color: ${MUTED};
-    font-size: 12px;
-    margin-top: 3px;
+    font-size: 11px;
+    margin-top: 2px;
 `
-
-/* Sair */
 
 const LogoutButton = styled.TouchableOpacity`
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    height: 56px;
-    margin-top: 28px;
-    border-radius: 16px;
-    border-width: 1.5px;
-    border-color: rgba(255, 90, 95, 0.4);
-    background-color: rgba(255, 90, 95, 0.06);
+    height: 52px;
+    background-color: rgba(255, 90, 95, 0.08);
+    border-radius: 14px;
+    border-width: 1px;
+    border-color: rgba(255, 90, 95, 0.2);
+    margin-bottom: 16px;
 `
 
 const LogoutText = styled.Text`
     color: ${DANGER};
     font-size: 12px;
     font-weight: 900;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     margin-left: 8px;
 `
 
 const VersionText = styled.Text`
-    color: #3a3a3a;
-    font-size: 9px;
-    font-weight: 700;
+    color: ${FAINT};
+    font-size: 10px;
+    font-weight: 800;
     letter-spacing: 2px;
     text-align: center;
-    margin-top: 22px;
+    margin-bottom: 20px;
 `
 
-/* Botões e campos */
-
-const ActionBtn = styled.TouchableOpacity`
-    height: 54px;
-    margin-top: 14px;
-    border-radius: 14px;
+const EmptyBox = styled.View`
     align-items: center;
     justify-content: center;
-    border-width: 1.5px;
-    border-color: ${(p) => (p.$variant === "outline" ? "#2E2E2E" : ACCENT)};
-    background-color: ${(p) => (p.$variant === "outline" ? "transparent" : ACCENT)};
+    padding: 24px 12px;
 `
 
-const ActionBtnText = styled.Text`
-    color: ${(p) => (p.$variant === "outline" ? TEXT : "#000000")};
-    font-size: 12px;
+const EmptyText = styled.Text`
+    color: ${MUTED};
+    font-size: 13px;
+    text-align: center;
+    margin-top: 8px;
+    line-height: 18px;
+`
+
+const Overlay = styled.View`
+    flex: 1;
+    justify-content: flex-end;
+    background-color: rgba(0, 0, 0, 0.8);
+`
+
+const OverlayDismiss = styled.TouchableOpacity`
+    flex: 1;
+`
+
+const Sheet = styled.View`
+    background-color: ${BG};
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    border-width: 1px;
+    border-color: ${BORDER};
+    padding: 12px 24px 24px 24px;
+    max-height: 80%;
+`
+
+const SheetHandle = styled.View`
+    width: 36px;
+    height: 4px;
+    background-color: ${BORDER};
+    border-radius: 2px;
+    align-self: center;
+    margin-bottom: 16px;
+`
+
+const SheetHeader = styled.View`
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+`
+
+const SheetTitle = styled.Text`
+    color: ${TEXT};
+    font-size: 15px;
     font-weight: 900;
     letter-spacing: 2px;
 `
 
-const FieldWrapper = styled.View`
+const CloseBtn = styled.TouchableOpacity`
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    background-color: ${SURFACE};
+    border-width: 1px;
+    border-color: ${BORDER};
+    align-items: center;
+    justify-content: center;
+`
+
+const ItemCard = styled.View`
+    background-color: ${SURFACE};
+    border-radius: 16px;
+    border-width: 1px;
+    border-color: ${(p) => (p.$highlight ? ACCENT : BORDER)};
+    padding: 16px;
+    margin-bottom: 12px;
+`
+
+const ItemRow = styled.View`
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+`
+
+const ItemTitle = styled.Text`
+    color: ${TEXT};
+    font-size: 14px;
+    font-weight: 800;
+`
+
+const ItemPrice = styled.Text`
+    color: ${ACCENT};
+    font-size: 14px;
+    font-weight: 900;
+`
+
+const ItemSub = styled.Text`
+    color: ${MUTED};
+    font-size: 12px;
+    margin-top: 2px;
+`
+
+const ItemActions = styled.View`
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     margin-top: 14px;
-    ${(p) => (p.$half ? "flex: 1;" : "")}
+    padding-top: 12px;
+    border-top-width: 1px;
+    border-top-color: ${BORDER};
+`
+
+const PrimaryTag = styled.View`
+    background-color: rgba(0, 230, 64, 0.1);
+    border-radius: 999px;
+    padding: 3px 8px;
+`
+
+const PrimaryTagText = styled.Text`
+    color: ${ACCENT};
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 1px;
+`
+
+const LinkBtn = styled.TouchableOpacity`
+    padding: 4px 0;
+`
+
+const LinkText = styled.Text`
+    color: ${(p) => (p.$danger ? DANGER : ACCENT)};
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+`
+
+const ActionBtn = styled.TouchableOpacity`
+    height: 52px;
+    border-radius: 14px;
+    background-color: ${(p) => (p.$variant === "primary" ? ACCENT : SURFACE)};
+    border-width: ${(p) => (p.$variant === "primary" ? 0 : 1.5)}px;
+    border-color: ${(p) => (p.$variant === "primary" ? "transparent" : ACCENT)};
+    align-items: center;
+    justify-content: center;
+    margin-top: 12px;
+`
+
+const ActionBtnText = styled.Text`
+    color: ${(p) => (p.$variant === "primary" ? "#000" : ACCENT)};
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 1.8px;
+`
+
+const FieldWrapper = styled.View`
+    flex: ${(p) => (p.$half ? 1 : "none")};
+    margin-bottom: 14px;
 `
 
 const FieldLabel = styled.Text`
@@ -1296,7 +1369,7 @@ const FieldLabel = styled.Text`
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 1.5px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 `
 
 const FieldInput = styled.TextInput.attrs({
@@ -1304,17 +1377,18 @@ const FieldInput = styled.TextInput.attrs({
     selectionColor: ACCENT
 })`
     height: 50px;
-    padding: 0 14px;
-    border-radius: 12px;
+    background-color: ${SURFACE};
+    border-radius: 14px;
     border-width: 1.5px;
     border-color: ${(p) => (p.$focused ? ACCENT : BORDER)};
-    background-color: ${SURFACE_2};
+    padding: 0 16px;
     color: ${TEXT};
-    font-size: 15px;
+    font-size: 14px;
 `
 
 const Row = styled.View`
     flex-direction: row;
+    align-items: center;
 `
 
 const Spacer = styled.View`
@@ -1328,185 +1402,18 @@ const CepRow = styled.View`
 
 const CepBtn = styled.TouchableOpacity`
     height: 50px;
-    margin-left: 12px;
-    padding: 0 20px;
-    border-radius: 12px;
+    padding: 0 18px;
     background-color: ${ACCENT};
+    border-radius: 14px;
     align-items: center;
     justify-content: center;
+    margin-bottom: 14px;
+    margin-left: 10px;
 `
 
 const CepBtnText = styled.Text`
-    color: #000000;
+    color: #000;
     font-size: 11px;
     font-weight: 900;
     letter-spacing: 1.5px;
-`
-
-const EmptyBox = styled.View`
-    align-items: center;
-    padding: 20px 10px;
-`
-
-const EmptyText = styled.Text`
-    color: ${MUTED};
-    font-size: 13px;
-    line-height: 20px;
-    text-align: center;
-    margin-top: 10px;
-`
-
-const OptionBtn = styled.TouchableOpacity`
-    min-width: 54px;
-    height: 46px;
-    padding: 0 14px;
-    margin: 0 8px 8px 0;
-    border-radius: 12px;
-    border-width: 1.5px;
-    border-color: ${(p) => (p.$selected ? ACCENT : BORDER)};
-    background-color: ${(p) => (p.$selected ? ACCENT : SURFACE_2)};
-    align-items: center;
-    justify-content: center;
-`
-
-const OptionText = styled.Text`
-    color: ${(p) => (p.$selected ? "#000000" : TEXT)};
-    font-size: 14px;
-    font-weight: 800;
-`
-
-const OptionsWrap = styled.View`
-    flex-direction: row;
-    flex-wrap: wrap;
-`
-
-const GroupLabel = styled.Text`
-    color: ${MUTED};
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 2px;
-    margin-top: 10px;
-    margin-bottom: 12px;
-`
-
-/* Modal */
-
-const Overlay = styled.View`
-    flex: 1;
-    justify-content: flex-end;
-    background-color: rgba(0, 0, 0, 0.75);
-`
-
-const OverlayDismiss = styled.TouchableOpacity`
-    flex: 1;
-`
-
-const Sheet = styled.View`
-    max-height: 640px;
-    min-height: 320px;
-    background-color: #0d0d0d;
-    border-top-left-radius: 28px;
-    border-top-right-radius: 28px;
-    border-width: 1px;
-    border-color: ${BORDER};
-    padding: 10px 24px 0 24px;
-`
-
-const SheetHandle = styled.View`
-    align-self: center;
-    width: 42px;
-    height: 4px;
-    border-radius: 2px;
-    background-color: #333333;
-    margin-bottom: 16px;
-`
-
-const SheetHeader = styled.View`
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-`
-
-const SheetTitle = styled.Text`
-    color: ${TEXT};
-    font-size: 18px;
-    font-weight: 900;
-    letter-spacing: 1px;
-`
-
-const CloseBtn = styled.TouchableOpacity`
-    width: 36px;
-    height: 36px;
-    border-radius: 18px;
-    background-color: ${SURFACE_2};
-    align-items: center;
-    justify-content: center;
-`
-
-const ItemCard = styled.View`
-    margin-top: 12px;
-    padding: 16px;
-    border-radius: 16px;
-    border-width: 1.5px;
-    border-color: ${(p) => (p.$highlight ? "rgba(0, 230, 64, 0.4)" : BORDER)};
-    background-color: ${SURFACE};
-`
-
-const ItemRow = styled.View`
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-`
-
-const ItemTitle = styled.Text`
-    color: ${TEXT};
-    font-size: 15px;
-    font-weight: 800;
-`
-
-const ItemPrice = styled.Text`
-    color: ${ACCENT};
-    font-size: 15px;
-    font-weight: 900;
-`
-
-const ItemSub = styled.Text`
-    color: ${MUTED};
-    font-size: 13px;
-    margin-top: 5px;
-`
-
-const ItemActions = styled.View`
-    flex-direction: row;
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top-width: 1px;
-    border-top-color: ${BORDER};
-`
-
-const LinkBtn = styled.TouchableOpacity`
-    margin-right: 20px;
-    padding: 2px 0;
-`
-
-const LinkText = styled.Text`
-    color: ${(p) => (p.$danger ? DANGER : ACCENT)};
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: 1.2px;
-`
-
-const PrimaryTag = styled.View`
-    margin-left: 10px;
-    padding: 3px 8px;
-    border-radius: 999px;
-    background-color: ${ACCENT};
-`
-
-const PrimaryTagText = styled.Text`
-    color: #000000;
-    font-size: 8px;
-    font-weight: 900;
-    letter-spacing: 1px;
 `

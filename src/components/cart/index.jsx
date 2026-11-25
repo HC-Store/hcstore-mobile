@@ -193,74 +193,80 @@ const Cart = () => {
                             {/* ITENS */}
 
                             <Content>
-                                {cartItems.map((product) => (
-                                    <ProductCard key={product.id}>
-                                        <ProductImage
-                                            onPress={() => openProduct(product)}
-                                            activeOpacity={0.85}
-                                        >
-                                            {product.image ? (
-                                                <Image
-                                                    source={{ uri: product.image }}
-                                                    style={{ width: "100%", height: "100%" }}
-                                                    resizeMode="cover"
-                                                />
-                                            ) : (
-                                                <ImagePlaceholder>HC</ImagePlaceholder>
-                                            )}
-                                        </ProductImage>
+                                {cartItems.map((product) => {
+                                    // Pega o tamanho selecionado ou o tamanho padrão/único do produto
+                                    const tamanhoExibido =
+                                        product.selectedSize ?? product.size ?? product.tamanho
 
-                                        <ProductInfo>
-                                            <ProductTop>
-                                                <ProductName numberOfLines={2}>
-                                                    {product.name}
-                                                </ProductName>
+                                    return (
+                                        <ProductCard key={`${product.id}-${tamanhoExibido || 'unico'}`}>
+                                            <ProductImage
+                                                onPress={() => openProduct(product)}
+                                                activeOpacity={0.85}
+                                            >
+                                                {product.image ? (
+                                                    <Image
+                                                        source={{ uri: product.image }}
+                                                        style={{ width: "100%", height: "100%" }}
+                                                        resizeMode="cover"
+                                                    />
+                                                ) : (
+                                                    <ImagePlaceholder>HC</ImagePlaceholder>
+                                                )}
+                                            </ProductImage>
 
-                                                <RemoveButton
-                                                    onPress={() => removeFromCart(product.id)}
-                                                    hitSlop={12}
-                                                    activeOpacity={0.7}
-                                                >
-                                                    <Ionicons name="close" size={16} color={FAINT} />
-                                                </RemoveButton>
-                                            </ProductTop>
+                                            <ProductInfo>
+                                                <ProductTop>
+                                                    <ProductName numberOfLines={2}>
+                                                        {product.name}
+                                                    </ProductName>
 
-                                            {!!product.size && (
-                                                <ProductDetails>Tamanho: {product.size}</ProductDetails>
-                                            )}
-
-                                            <ProductUnit>{formatPrice(product.price)} cada</ProductUnit>
-
-                                            <ProductBottom>
-                                                <QuantityContainer>
-                                                    <QuantityButton
-                                                        onPress={() => decreaseQuantity(product.id)}
+                                                    <RemoveButton
+                                                        onPress={() => removeFromCart(product.id, product.selectedSize)}
+                                                        hitSlop={12}
                                                         activeOpacity={0.7}
                                                     >
-                                                        <Ionicons
-                                                            name={product.quantity === 1 ? "trash-outline" : "remove"}
-                                                            size={15}
-                                                            color={product.quantity === 1 ? DANGER : TEXT}
-                                                        />
-                                                    </QuantityButton>
+                                                        <Ionicons name="close" size={16} color={FAINT} />
+                                                    </RemoveButton>
+                                                </ProductTop>
 
-                                                    <QuantityText>{product.quantity}</QuantityText>
+                                                {!!tamanhoExibido && (
+                                                    <SizeTagText>Tamanho: {tamanhoExibido}</SizeTagText>
+                                                )}
 
-                                                    <QuantityButton
-                                                        onPress={() => increaseQuantity(product.id)}
-                                                        activeOpacity={0.7}
-                                                    >
-                                                        <Ionicons name="add" size={15} color={ACCENT} />
-                                                    </QuantityButton>
-                                                </QuantityContainer>
+                                                <ProductUnit>{formatPrice(product.price)} cada</ProductUnit>
 
-                                                <ProductPrice>
-                                                    {formatPrice(Number(product.price || 0) * product.quantity)}
-                                                </ProductPrice>
-                                            </ProductBottom>
-                                        </ProductInfo>
-                                    </ProductCard>
-                                ))}
+                                                <ProductBottom>
+                                                    <QuantityContainer>
+                                                        <QuantityButton
+                                                            onPress={() => decreaseQuantity(product.id, product.selectedSize)}
+                                                            activeOpacity={0.7}
+                                                        >
+                                                            <Ionicons
+                                                                name={product.quantity === 1 ? "trash-outline" : "remove"}
+                                                                size={15}
+                                                                color={product.quantity === 1 ? DANGER : TEXT}
+                                                            />
+                                                        </QuantityButton>
+
+                                                        <QuantityText>{product.quantity}</QuantityText>
+
+                                                        <QuantityButton
+                                                            onPress={() => increaseQuantity(product.id, product.selectedSize)}
+                                                            activeOpacity={0.7}
+                                                        >
+                                                            <Ionicons name="add" size={15} color={ACCENT} />
+                                                        </QuantityButton>
+                                                    </QuantityContainer>
+
+                                                    <ProductPrice>
+                                                        {formatPrice(Number(product.price || 0) * product.quantity)}
+                                                    </ProductPrice>
+                                                </ProductBottom>
+                                            </ProductInfo>
+                                        </ProductCard>
+                                    )
+                                })}
 
                                 <ContinueButton onPress={goToCatalog} activeOpacity={0.7}>
                                     <Ionicons name="add-circle-outline" size={17} color={ACCENT} />
@@ -439,7 +445,7 @@ const RemoveButton = styled.TouchableOpacity`
     padding: 2px;
 `
 
-const ProductDetails = styled.Text`
+const SizeTagText = styled.Text`
     color: ${MUTED};
     font-size: 12px;
     margin-top: 4px;
